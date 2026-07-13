@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Menú raíz -->
+  <menuitem id="menu_custodia_root" name="Custodia de Valores" sequence="10"/>
+  <menuitem id="menu_custodia_config" name="Configuración" 
+              parent="menu_custodia_root" sequence="100"/>
+
+  <menuitem id="menu_custodia_ruta_maestra" name="Rutas Maestras" 
+              parent="menu_custodia_config" action="action_custodia_ruta_maestra" sequence="10"/>
+
+  <!--<menuitem id="menu_custodia_ruta_nodo" name="Nodos (Bodegas)" -->
+  <menuitem id="menu_custodia_punto_operativo" name="Nodos (Bodegas)" 
+              parent="menu_custodia_config" action="action_custodia_punto_operativo" sequence="20"/>
+            <!--  parent="menu_custodia_config" action="action_custodia_ruta_nodo" sequence="20"/> -->
+
+  <menuitem id="menu_custodia_punto_operativo" 
+              name="Nodos (Bodegas)" 
+              parent="menu_custodia_config" 
+              action="action_custodia_punto_operativo" 
+              sequence="20"/>
+
+ <!-- <record id="action_custodia_asignacion" model="ir.actions.act_window">
+        <field name="name">Asignaciones de Custodia</field>
+        <field name="res_model">custodia.asignacion</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_custodia_orden_main"
+              name="Plantilla de Custodia"
+              parent="menu_custodia_root"
+              action="action_custodia_orden"
+              sequence="10"/> -->
+  
+  <!-- Servicios -->
+  <record id="action_custodia_service" model="ir.actions.act_window">
+    <field name="name">Servicios de Custodia</field>
+    <field name="res_model">custodia.service</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_custodia_service"
+            name="Servicios"
+            parent="menu_custodia_root"
+            action="action_custodia_service"
+            sequence="20"/>
+
+  <!-- Asignaciones -->
+  <record id="action_custodia_asignacion" model="ir.actions.act_window">
+    <field name="name">Asignaciones de Custodia</field>
+    <field name="res_model">custodia.asignacion</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_custodia_asignacion"
+            name="Asignaciones"
+            parent="menu_custodia_root"
+            action="action_custodia_asignacion"
+            sequence="30"/>
+
+  <!-- Carriers -->
+  <record id="action_custodia_carrier" model="ir.actions.act_window">
+    <field name="name">Carriers</field>
+    <field name="res_model">custodia.carrier</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_custodia_carrier"
+            name="Carriers"
+            parent="menu_custodia_root"
+            action="action_custodia_carrier"
+            sequence="40"/>
+
+  <!-- Rutas -->
+  <record id="action_custodia_ruta" model="ir.actions.act_window">
+    <field name="name">Rutas</field>
+    <field name="res_model">custodia.ruta</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_custodia_ruta"
+            name="Rutas"
+            parent="menu_custodia_root"
+            action="action_custodia_ruta"
+            sequence="50"/>
+
+  <record id="action_custodia_punto_operativo" model="ir.actions.act_window">
+        <field name="name">Nodos (Bodegas)</field>
+        <field name="res_model">custodia.punto.operativo</field> <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea el primer punto operativo (Bodega)
+            </p>
+        </field>
+    </record>
+</odoo>
+
+
+

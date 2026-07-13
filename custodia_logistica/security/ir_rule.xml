@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Portal: ver solo sus servicios -->
+  <record id="custodia_service_rule_portal" model="ir.rule">
+    <field name="name">Portal own services</field>
+    <field name="model_id" ref="model_custodia_service"/>
+    <field name="domain_force">[('partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+    <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+  </record>
+  
+  <record id="mail_message_portal_rule_custodia" model="ir.rule">
+    <field name="name">Portal mail messages custodia</field>
+    <field name="model_id" ref="mail.model_mail_message"/>
+    <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+    <field name="domain_force">
+        [('model', '=', 'custodia.service')]
+    </field>
+</record>
+  
+</odoo>

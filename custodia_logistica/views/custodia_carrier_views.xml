@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_custodia_carrier_form" model="ir.ui.view">
+        <field name="name">custodia.carrier.form</field>
+        <field name="model">custodia.carrier</field>
+        <field name="arch" type="xml">
+            <form string="Carrier de Custodia">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Nombre del Carrier"/></h1>
+                    </div>
+                    <notebook>
+                        <page string="Información General">
+                            <group string="Datos del Carrier">
+                                <field name="partner_id"/>
+                                <field name="rfc"/>
+                                <field name="tipo_servicio"/>
+                            </group>
+                            <group string="Contacto">
+                                <field name="telefono"/>
+                                <field name="email"/>
+                                <field name="active" widget="boolean_toggle"/>
+                            </group>
+                        </page>
+                        <page string="Notas">
+                            <field name="notas" placeholder="Agregue notas adicionales aquí..."/>
+                        </page>
+                        <page string="Seguimiento">
+                            <div class="oe_chatter">
+                                <field name="message_follower_ids"/>
+                                <field name="activity_ids"/>
+                                <field name="message_ids"/>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_custodia_carrier_list" model="ir.ui.view">
+        <field name="name">custodia.carrier.list</field>
+        <field name="model">custodia.carrier</field>
+        <field name="arch" type="xml">
+            <list string="Carriers">
+                <field name="name"/>
+                <field name="rfc"/>
+                <field name="tipo_servicio"/>
+                <field name="telefono"/>
+                <field name="email"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_custodia_carrier_search" model="ir.ui.view">
+        <field name="name">custodia.carrier.search</field>
+        <field name="model">custodia.carrier</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Carriers">
+                <field name="name"/>
+                <field name="rfc"/>
+                <field name="partner_id"/>
+                <separator/>
+                <filter string="Archivados" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_custodia_carrier" model="ir.actions.act_window">
+        <field name="name">Carriers</field>
+        <field name="res_model">custodia.carrier</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_custodia_carrier_search"/>
+    </record>
+</odoo>

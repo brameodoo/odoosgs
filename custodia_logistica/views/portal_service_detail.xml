@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_service_detail" name="Detalle Servicio Custodia">
+        <t t-call="portal.portal_layout">
+
+            <div class="container my-4">
+
+                <!-- HEADER -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Servicio <t t-esc="service.name or 'Sin referencia'"/></h2>
+                    <span class="badge bg-info text-white">
+                        <t t-esc="service.state"/>
+                    </span>
+                </div>
+
+                <!-- INFO -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Cliente:</strong> <t t-esc="service.partner_id.name"/></p>
+                                <p><strong>Ruta:</strong> <t t-esc="service.ruta_id.name or '-'"/></p>
+                                <p><strong>Load ID:</strong> <t t-esc="service.load_id or '-'"/></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Inicio:</strong> <t t-esc="service.start_datetime"/></p>
+                                <p><strong>Nivel Seguridad:</strong> <t t-esc="service.nivel_seguridad"/></p>
+                                <p><strong>Transporte:</strong> <t t-esc="service.transporte or '-'"/></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAPA -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ruta Planeada</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="route-map"
+                             t-att-data-ruta-id="service.ruta_id.id"
+                             style="height: 400px; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRACKING -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Monitoreo en Vivo</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="live-map"
+                             t-att-data-service-id="service.id"
+                             t-att-data-token="token"
+                             style="height: 350px; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHATTER -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Seguimiento e Incidencias</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <t t-call="portal.message_thread">
+                            <t t-set="object" t-value="service"/>
+                            <t t-set="token" t-value="token"/>
+                        </t>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </t>
+    </template>
+</odoo>

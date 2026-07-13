@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_services" inherit_id="portal.portal_my_home" name="Portal Home - Servicios Custodia">
+        <xpath expr="//div[contains(@class, 'o_portal_docs')]" position="inside">
+            <a class="o_portal_doc" href="/mis-servicios">
+                <span class="o_portal_doc_title">Mis Servicios de Custodia</span>
+                <span class="o_portal_doc_count" t-esc="services_count if services_count is not None else 0"/>
+            </a>
+        </xpath>
+    </template>
+
+    <template id="portal_service_list" name="Mis Servicios de Custodia">
+        <t t-call="portal.portal_layout">
+            <div class="container my-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">Mis Servicios / Alertas</h2>
+                    <a href="/solicitar-servicio" class="btn btn-primary">Nueva Alerta</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Folio</th>
+                                <th>Tipo</th>
+                                <th>Fecha programada</th>
+                                <th>Ruta</th>
+                                <th>Load ID</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="services" t-as="service">
+                                <td>
+                                    <a t-att-href="'/mis-servicios/%s?access_token=%s' % (service.id, service.access_token)">
+                                        <t t-esc="service.name"/>
+                                    </a>
+                                </td>
+                                <td><t t-esc="service.request_type and dict(service._fields['request_type'].selection).get(service.request_type) or '-'"/></td>
+                                <td><t t-esc="service.start_datetime or '-'"/></td>
+                                <td><t t-esc="service.ruta_id.name if service.ruta_id else '-'"/></td>
+                                <td><t t-esc="service.load_id or '-'"/></td>
+                                <td><t t-esc="dict(service._fields['state'].selection).get(service.state)"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_service_detail" name="Detalle Servicio Custodia">
+        <t t-call="portal.portal_layout">
+            <div class="container my-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">Servicio <t t-esc="service.name"/></h2>
+                    <span class="badge bg-info text-dark" t-esc="dict(service._fields['state'].selection).get(service.state)"/>
+                </div>
+
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-lg-6 border-end-lg">
+                                <h4 class="mb-3">Información General</h4>
+                                <p><strong>Cliente:</strong> <t t-esc="service.partner_id.name"/></p>
+                                <p><strong>Ruta:</strong> <t t-esc="service.ruta_id.name if service.ruta_id else '-'"/></p>
+                                <p><strong>Inicio Programado:</strong> <t t-esc="service.start_datetime"/></p>
+                                <p><strong>Nivel de Seguridad:</strong> <t t-esc="dict(service._fields['nivel_seguridad'].selection).get(service.nivel_seguridad) if service.nivel_seguridad else '-'"/></p>
+                                <p class="mb-0"><strong>Load ID:</strong> <t t-esc="service.load_id or '-'"/></p>
+                            </div>
+                            <div class="col-lg-6">
+                                <h4 class="mb-3">Datos de Logística</h4>
+                                <p><strong>Unidad:</strong> <t t-esc="service.tipo_unidad or '-'"/></p>
+                                <p><strong>Placas:</strong> <t t-esc="service.placas or '-'"/></p>
+                                <p><strong>Transporte:</strong> <t t-esc="service.transporte or '-'"/></p>
+                                <p class="mb-0"><strong>Operador:</strong> <t t-esc="service.operador1_nombre or '-'"/></p>
+                            </div>
+                        </div>
+
+                        <hr/>
+                        <t t-if="convert_error">
+                            <div class="alert alert-warning mb-3">
+                                <strong>No fue posible convertir la alerta.</strong>
+                                <div><t t-esc="convert_error"/></div>
+                            </div>
+                        </t>
+                        <t t-if="can_convert_alert and missing_service_fields">
+                            <div class="alert alert-info mb-3">
+                                <strong>Antes de convertirla a servicio, completa:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li t-foreach="missing_service_fields" t-as="field_name"><t t-esc="field_name"/></li>
+                                </ul>
+                            </div>
+                        </t>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a t-att-href="'/mis-servicios/%s/editar?access_token=%s' % (service.id, service.access_token)"
+                               class="btn btn-outline-primary">
+                                Editar datos
+                            </a>
+                            <t t-if="can_convert_alert">
+                                <a t-att-href="('/mis-servicios/%s/editar?access_token=%s' % (service.id, service.access_token)) if missing_service_fields else ('/mis-servicios/%s/convertir?access_token=%s' % (service.id, service.access_token))"
+                                   t-att-class="'btn btn-warning disabled' if missing_service_fields else 'btn btn-warning'"
+                                   t-att-aria-disabled="'true' if missing_service_fields else None">
+                                    Convertir alerta a solicitud
+                                </a>
+                                <t t-if="missing_service_fields">
+                                    <a t-att-href="'/mis-servicios/%s/editar?access_token=%s' % (service.id, service.access_token)"
+                                       class="btn btn-primary">
+                                        Completar datos faltantes
+                                    </a>
+                                </t>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <t t-if="service.request_type == 'servicio' or service.state != 'alerta'">
+                    <div class="card mb-3 border-0 shadow-sm bg-light">
+                        <div class="card-body p-4"
+                             id="service-control-panel"
+                             t-att-data-service-id="service.id"
+                             t-att-data-token="service.access_token">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                                <h4 class="mb-0">Control de Servicio</h4>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button"
+                                            class="btn btn-warning service-action-btn"
+                                            data-action="llegada"
+                                            t-att-disabled="'disabled' if service.hora_llegada else None">
+                                        Marcar llegada custodio
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-success service-action-btn"
+                                            data-action="iniciar"
+                                            t-att-disabled="'disabled' if (not service.hora_llegada or service.hora_inicio_real or service.state == 'finalizado') else None">
+                                        Iniciar servicio
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="alert d-none mb-3" id="service-control-feedback" role="alert"></div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="border rounded bg-white p-3 h-100">
+                                        <div class="fw-bold mb-1">Llegada</div>
+                                        <div>
+                                            <span id="hora-llegada"><t t-esc="service.hora_llegada or 'Pendiente'"/></span>
+                                            <span class="text-muted">(<span id="diff-llegada"><t t-esc="service.diff_llegada_min"/></span> min)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="border rounded bg-white p-3 h-100">
+                                        <div class="fw-bold mb-1">Inicio real</div>
+                                        <div>
+                                            <span id="hora-inicio-real"><t t-esc="service.hora_inicio_real or 'Pendiente'"/></span>
+                                            <span class="text-muted">(<span id="diff-inicio"><t t-esc="service.diff_inicio_min"/></span> min)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body p-4"
+                             id="incident-panel"
+                             t-att-data-service-id="service.id"
+                             t-att-data-token="service.access_token">
+                            <h4 class="mb-3 text-danger">Reportar Incidencia</h4>
+                            <div class="alert d-none mb-3" id="incident-feedback" role="alert"></div>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="incident-message" rows="3" placeholder="Describe la situación..."></textarea>
+                            </div>
+                            <button type="button" class="btn btn-danger w-100" id="incident-submit">Enviar reporte</button>
+                        </div>
+                    </div>
+                </t>
+
+                <div class="card mb-3">
+                    <div class="card-header"><strong>Ruta Planeada</strong></div>
+                    <div class="card-body">
+                        <div id="route-summary" style="display:none;" class="alert alert-light border mb-3">
+                            <strong>Distancia:</strong> <span id="route-distance">-</span>
+                            <span class="mx-2">|</span>
+                            <strong>Duración estimada:</strong> <span id="route-duration">-</span>
+                        </div>
+                        <div id="route-map" t-att-data-ruta-id="service.ruta_id.id if service.ruta_id else ''" style="height: 360px; border-radius: 6px;"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><strong>Monitoreo en Vivo</strong></div>
+                    <div class="card-body">
+                        <t t-if="service.gps_tracking_url">
+                            <div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                <div>
+                                    <strong>Seguimiento GPS externo disponible.</strong>
+                                    <div class="small text-muted">Si el proveedor permite incrustación, se mostrará abajo. Si no, usa el botón para abrir la plataforma GPS.</div>
+                                </div>
+                                <a t-att-href="service.gps_tracking_url" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                                    Abrir monitoreo GPS
+                                </a>
+                            </div>
+                            <div class="ratio ratio-16x9 border rounded overflow-hidden bg-light">
+                                <iframe t-att-src="service.gps_tracking_url" title="Monitoreo GPS en tiempo real" allowfullscreen="allowfullscreen"></iframe>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="alert alert-warning">Aún no se ha configurado una liga GPS para este servicio. Mientras tanto se muestra el mapa interno de seguimiento.</div>
+                            <div id="live-map" t-att-data-service-id="service.id" t-att-data-token="service.access_token" style="height: 320px; border-radius: 6px;"></div>
+                        </t>
+                    </div>
+                </div>
+
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <strong>Seguimiento e Incidencias</strong>
+                    </div>
+                    <div class="card-body">
+                        <t t-call="portal.message_thread">
+                            <t t-set="object" t-value="service"/>
+                            <t t-set="token" t-value="token"/>
+                            <t t-set="pid" t-value="pid"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_service_edit" name="Editar Alerta/Servicio Custodia">
+        <t t-call="portal.portal_layout">
+            <div class="container my-4">
+                <h3 class="mb-3">Editar <t t-esc="service.name"/></h3>
+                <form t-att-action="'/mis-servicios/%s/editar?access_token=%s' % (service.id, service.access_token)" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <t t-if="convert_error">
+                        <div class="alert alert-warning">
+                            <strong>No fue posible convertir la alerta.</strong>
+                            <div><t t-esc="convert_error"/></div>
+                        </div>
+                    </t>
+                    <t t-if="missing_service_fields and service.request_type == 'alerta'">
+                        <div class="alert alert-info">
+                            <strong>Completa estos datos para poder convertirla a servicio:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li t-foreach="missing_service_fields" t-as="field_name"><t t-esc="field_name"/></li>
+                            </ul>
+                        </div>
+                    </t>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contacto Solicitante *</label>
+                            <select name="contact_id" class="form-select" required="1">
+                                <t t-foreach="contacts" t-as="c">
+                                    <option t-att-value="c.id" t-att-selected="'selected' if service.contact_id.id == c.id else None"><t t-esc="c.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha y Hora de Inicio *</label>
+                            <input type="datetime-local" name="start_datetime" class="form-control" t-att-value="service.start_datetime and service.start_datetime.strftime('%Y-%m-%dT%H:%M') or ''" required="1"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Carrier</label>
+                            <select name="carrier_id" class="form-select">
+                                <option value="">-- Opcional --</option>
+                                <t t-foreach="carriers" t-as="car">
+                                    <option t-att-value="car.id" t-att-selected="'selected' if service.carrier_id.id == car.id else None"><t t-esc="car.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-4">
+                            <label class="form-label d-block">Nivel de Seguridad</label>
+                            <div class="custodia-security-levels" data-security-level-widget="1">
+                                <div class="custodia-security-level-options">
+                                    <label class="custodia-level-option">
+                                        <input type="radio" name="nivel_seguridad" value="1" data-level-title="Nivel 1 — Básico" t-att-checked="'checked' if service.nivel_seguridad == '1' else None"/>
+                                        <span class="custodia-level-card">
+                                            <span class="custodia-level-card-title">🟢 Nivel 1</span>
+                                            <span class="custodia-level-card-subtitle">Opción básica para operación estándar.</span>
+                                        </span>
+                                    </label>
+                                    <label class="custodia-level-option">
+                                        <input type="radio" name="nivel_seguridad" value="2" data-level-title="Nivel 2 — Intermedio" t-att-checked="'checked' if service.nivel_seguridad == '2' else None"/>
+                                        <span class="custodia-level-card">
+                                            <span class="custodia-level-card-title">🔵 Nivel 2</span>
+                                            <span class="custodia-level-card-subtitle">Mayor cobertura operativa y apoyo en ruta.</span>
+                                        </span>
+                                    </label>
+                                    <label class="custodia-level-option">
+                                        <input type="radio" name="nivel_seguridad" value="3" data-level-title="Nivel 3 — Avanzado" t-att-checked="'checked' if service.nivel_seguridad == '3' else None"/>
+                                        <span class="custodia-level-card">
+                                            <span class="custodia-level-card-title">🟠 Nivel 3</span>
+                                            <span class="custodia-level-card-subtitle">Protección avanzada para rutas de mayor exposición.</span>
+                                        </span>
+                                    </label>
+                                    <label class="custodia-level-option">
+                                        <input type="radio" name="nivel_seguridad" value="4" data-level-title="Nivel 4 — Máximo" t-att-checked="'checked' if service.nivel_seguridad == '4' else None"/>
+                                        <span class="custodia-level-card">
+                                            <span class="custodia-level-card-title">🔴 Nivel 4</span>
+                                            <span class="custodia-level-card-subtitle">Cobertura máxima para operaciones críticas.</span>
+                                        </span>
+                                    </label>
+                                    <label class="custodia-level-option">
+                                        <input type="radio" name="nivel_seguridad" value="4x" data-level-title="Excepción + Nivel 4" t-att-checked="'checked' if service.nivel_seguridad == '4x' else None"/>
+                                        <span class="custodia-level-card">
+                                            <span class="custodia-level-card-title">🛡️ Excepción + Nivel 4</span>
+                                            <span class="custodia-level-card-subtitle">Atención especial para escenarios fuera de política estándar.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="custodia-security-summary">
+                                    <div class="custodia-security-badge" data-level-badge="1">Resumen</div>
+                                    <h5 data-security-level-title="1">Nivel de Seguridad</h5>
+                                    <p class="text-muted mb-3" data-security-level-description="1">Selecciona el nivel que mejor se adapte al riesgo y al tipo de carga.</p>
+                                    <div data-security-level-content="1"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Load ID</label>
+                            <input type="text" name="load_id" class="form-control" t-att-value="service.load_id or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Unidad</label>
+                            <input type="text" name="tipo_unidad" class="form-control" t-att-value="service.tipo_unidad or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Placas</label>
+                            <input type="text" name="placas" class="form-control" t-att-value="service.placas or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Transporte</label>
+                            <input type="text" name="transporte" class="form-control" t-att-value="service.transporte or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Operador</label>
+                            <input type="text" name="operador1_nombre" class="form-control" t-att-value="service.operador1_nombre or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono Monitoreo</label>
+                            <input type="text" name="tel_monitoreo_1" class="form-control" t-att-value="service.tel_monitoreo_1 or ''"/>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a t-att-href="'/mis-servicios/%s?access_token=%s' % (service.id, service.access_token)" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

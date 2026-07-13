@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_service_form" name="Solicitar Servicio de Custodia">
+        <t t-call="portal.portal_layout">
+            <div id="wrap" class="container my-4">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card shadow">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="mb-0">Nueva Alerta de Custodia</h3>
+                            </div>
+                            <div class="card-body">
+                                <t t-if="error">
+                                    <div class="alert alert-danger" role="alert">
+                                        <t t-esc="error"/>
+                                    </div>
+                                </t>
+
+                                <form action="/solicitar-servicio/submit" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                    <div class="alert alert-info">
+                                        Solo son obligatorios <strong>Contacto solicitante</strong> y <strong>Fecha/Hora</strong>. El resto lo puedes completar después.
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="contact_id">Contacto Solicitante *</label>
+                                            <select name="contact_id" class="form-select" required="1">
+                                                <t t-foreach="contacts" t-as="c">
+                                                    <option t-att-value="c.id"><t t-esc="c.name"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="start_datetime">Fecha y Hora de Inicio *</label>
+                                            <input type="datetime-local" name="start_datetime" class="form-control" required="1"/>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="carrier_id">Carrier (Transportista)</label>
+                                            <select name="carrier_id" class="form-select">
+                                                <option value="">-- Opcional --</option>
+                                                <t t-foreach="carriers" t-as="car">
+                                                    <option t-att-value="car.id"><t t-esc="car.name"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 mb-4">
+                                            <label class="form-label d-block">Nivel de Seguridad</label>
+                                            <div class="custodia-security-levels" data-security-level-widget="1">
+                                                <div class="custodia-security-level-options">
+                                                    <label class="custodia-level-option">
+                                                        <input type="radio" name="nivel_seguridad" value="1" data-level-title="Nivel 1 — Básico"/>
+                                                        <span class="custodia-level-card">
+                                                            <span class="custodia-level-card-title">🟢 Nivel 1</span>
+                                                            <span class="custodia-level-card-subtitle">Opción básica para operación estándar.</span>
+                                                        </span>
+                                                    </label>
+                                                    <label class="custodia-level-option">
+                                                        <input type="radio" name="nivel_seguridad" value="2" data-level-title="Nivel 2 — Intermedio"/>
+                                                        <span class="custodia-level-card">
+                                                            <span class="custodia-level-card-title">🔵 Nivel 2</span>
+                                                            <span class="custodia-level-card-subtitle">Mayor cobertura operativa y apoyo en ruta.</span>
+                                                        </span>
+                                                    </label>
+                                                    <label class="custodia-level-option">
+                                                        <input type="radio" name="nivel_seguridad" value="3" data-level-title="Nivel 3 — Avanzado"/>
+                                                        <span class="custodia-level-card">
+                                                            <span class="custodia-level-card-title">🟠 Nivel 3</span>
+                                                            <span class="custodia-level-card-subtitle">Protección avanzada para rutas de mayor exposición.</span>
+                                                        </span>
+                                                    </label>
+                                                    <label class="custodia-level-option">
+                                                        <input type="radio" name="nivel_seguridad" value="4" data-level-title="Nivel 4 — Máximo"/>
+                                                        <span class="custodia-level-card">
+                                                            <span class="custodia-level-card-title">🔴 Nivel 4</span>
+                                                            <span class="custodia-level-card-subtitle">Cobertura máxima para operaciones críticas.</span>
+                                                        </span>
+                                                    </label>
+                                                    <label class="custodia-level-option">
+                                                        <input type="radio" name="nivel_seguridad" value="4x" data-level-title="Excepción + Nivel 4"/>
+                                                        <span class="custodia-level-card">
+                                                            <span class="custodia-level-card-title">🛡️ Excepción + Nivel 4</span>
+                                                            <span class="custodia-level-card-subtitle">Atención especial para escenarios fuera de política estándar.</span>
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                                <div class="custodia-security-summary">
+                                                    <div class="custodia-security-badge" data-level-badge="1">Selecciona un nivel</div>
+                                                    <h5 data-security-level-title="1">Nivel de Seguridad</h5>
+                                                    <p class="text-muted mb-3" data-security-level-description="1">Selecciona el nivel que mejor se adapte al riesgo y al tipo de carga.</p>
+                                                    <div data-security-level-content="1"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label text-primary" for="ruta_maestra_id">
+                                                <i class="fa fa-map-signs me-1"/> 1. Seleccione Ruta Principal (Origen - Destino)
+                                            </label>
+                                            <select name="ruta_maestra_id" id="ruta_maestra_id" class="form-control">
+                                                <option value="">-- Seleccione una Ruta General --</option>
+                                                <t t-foreach="rutas_maestras" t-as="rm">
+                                                    <option t-att-value="rm.id"><t t-esc="rm.name"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="nodo_origen_id">2. Punto de Salida Específico</label>
+                                            <select name="nodo_origen_id" id="nodo_origen_id" class="form-control" disabled="1">
+                                                <option value="">-- Primero elija la ruta --</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="nodo_destino_id">3. Punto de Llegada Específico</label>
+                                            <select name="nodo_destino_id" id="nodo_destino_id" class="form-control" disabled="1">
+                                                <option value="">-- Primero elija la ruta --</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="load_id">Load ID (Referencia)</label>
+                                            <input type="text" name="load_id" class="form-control" placeholder="Ej. L-99823"/>
+                                        </div>
+                                    </div>
+
+                                    <hr/>
+                                    <h5 class="text-muted mb-3">Datos del Vehículo de Carga (opcionales)</h5>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="tipo_unidad">Tipo de Unidad</label>
+                                            <input type="text" name="tipo_unidad" class="form-control" placeholder="Ej. Tráiler 53ft"/>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="placas">Placas</label>
+                                            <input type="text" name="placas" class="form-control"/>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="transporte">Línea de Transporte</label>
+                                            <input type="text" name="transporte" class="form-control"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="operador1_nombre">Nombre del Operador</label>
+                                            <input type="text" name="operador1_nombre" class="form-control"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="tel_monitoreo_1">Teléfono Monitoreo</label>
+                                            <input type="text" name="tel_monitoreo_1" class="form-control"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="checkbox" value="1" id="create_as_service" name="create_as_service"/>
+                                        <label class="form-check-label" for="create_as_service">
+                                            Crear directamente como solicitud (si ya tienes todos los datos)
+                                        </label>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <a href="/mis-servicios" class="btn btn-secondary me-2">Cancelar</a>
+                                        <button type="submit" class="btn btn-primary">Crear Alerta</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>
