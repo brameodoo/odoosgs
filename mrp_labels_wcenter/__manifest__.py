@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+{
+    'name': 'JKKPack - Etiquetas de Producción, Empaque y Palletizado',
+    'version': '19.0.1.0.0',
+    'category': 'Manufacturing/Manufacturing',
+    'summary': 'Módulo especializado para generación de etiquetas ZPL por rollo, caja y tarima con Lista de Empaque QWeb',
+    'author': 'Gateway - JKKPack',
+    'depends': [
+        'mrp',
+        'sale_management',
+        'stock',
+        'barcodes',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/ir_sequence_data.xml',
+        'views/mrp_workcenter_views.xml',
+        'views/product_template_views.xml',
+        'views/mrp_production_views.xml',
+        'wizard/mrp_production_label_wizard_views.xml',
+        'wizard/mrp_label_reprint_wizard_views.xml',
+        'report/mrp_packaging_label_reports.xml',
+        'report/report_roll_label_zpl.xml',
+        'report/report_box_label_zpl.xml',
+        'report/report_pallet_master_zpl.xml',
+        'report/report_packing_list_pdf.xml',
+    ],
+    'installable': True,
+    'application': True,
+    'license': 'LGPL-3',
+}
