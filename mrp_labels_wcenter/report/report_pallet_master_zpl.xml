@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_pallet_master_zpl_template">
+        <t t-foreach="docs" t-as="doc">
+^XA
+^PW812
+^LL1218
+^FO30,40^A0N,24,24^FDPedido / Order No.^FS
+^FO30,70^A0N,40,40^FD<t t-esc="doc.sale_order_id.name or ''"/>^FS
+
+^FO30,120^A0N,24,24^FDPedido / Customer PO^FS
+^FO30,150^A0N,35,35^FD<t t-esc="doc.customer_po or ''"/>^FS
+
+^FO300,40^A0N,24,24^FDCod. Producto^FS
+^FO300,70^A0N,35,35^FD<t t-esc="doc.production_id.product_id.default_code or ''"/>^FS
+
+^FO580,40^A0N,22,22^FDCantXTarima/QtyPerPallet^FS
+^FO580,70^A0N,45,45^FD<t t-esc="'%.2f' % doc.total_qty"/>^FS
+
+^FO300,120^A0N,22,22^FDCajas o Rollos por Tarima^FS
+^FO300,150^A0N,35,35^FD<t t-esc="'%.2f' % doc.total_boxes"/>^FS
+
+^FO580,120^A0N,22,22^FDPeso Bruto/ Gross Weight^FS
+^FO580,150^A0N,35,35^FD<t t-esc="'%.2f' % doc.gross_weight"/> KG^FS
+
+^FO30,210^A0N,24,24^FDFecha / Date: <t t-esc="doc.date_created.strftime('%d/%m/%Y')"/>^FS
+^FO300,210^A0N,24,24^FDPeso Neto / Net Weight: <t t-esc="'%.2f' % doc.net_weight"/> KG^FS
+
+^FO30,260^A0N,24,24^FD<t t-esc="doc.production_id.product_id.name[:50] if doc.production_id.product_id.name else ''"/>^FS
+
+^FO150,320^BY3^BCN,90,Y,N,N^FD<t t-esc="doc.name"/>^FS
+^XZ
+        </t>
+    </template>
+</odoo>
