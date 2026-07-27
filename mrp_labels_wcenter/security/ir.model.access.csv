@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
+access_mrp_production_label,mrp.production.label,model_mrp_production_label,mrp.group_mrp_user,1,1,1,1
+access_mrp_production_pallet,mrp.production.pallet,model_mrp_production_pallet,mrp.group_mrp_user,1,1,1,1
+access_mrp_production_label_wizard,mrp.production.label.wizard,model_mrp_production_label_wizard,mrp.group_mrp_user,1,1,1,1
+access_mrp_label_reprint_wizard,mrp.label.reprint.wizard,model_mrp_label_reprint_wizard,mrp.group_mrp_user,1,1,1,1
+access_mrp_production_label_wizard_line,mrp.production.label.wizard.line,model_mrp_production_label_wizard_line,mrp.group_mrp_user,1,1,1,1
