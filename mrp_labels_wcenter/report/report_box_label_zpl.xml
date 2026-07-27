@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_box_label_zpl_template">
+        <t t-foreach="docs" t-as="doc">
+^XA
+^PW812
+^LL1218
+^FO20,30^A0N,22,22^FDO. Fab / Mfg No.^FS
+^FO20,55^A0N,30,30^FD<t t-esc="doc.production_id.name"/>^FS
+
+^FO220,30^A0N,22,22^FDCod. Producto^FS
+^FO220,55^A0N,30,30^FD<t t-esc="doc.product_id.default_code or ''"/>^FS
+
+^FO450,30^A0N,22,22^FDRollo Maestro^FS
+^FO450,55^A0N,28,28^FD<t t-esc="doc.master_roll_ref or ''"/>^FS
+
+^FO650,30^A0N,22,22^FDOperador^FS
+^FO650,55^A0N,28,28^FD<t t-esc="doc.operator_name or ''"/>^FS
+
+^FO20,100^A0N,20,20^FDCliente/Customer: <t t-esc="doc.production_id.sale_order_id.partner_id.name or ''"/>^FS
+^FO450,100^A0N,20,20^FDMill/Roll: <t t-esc="'%.2f' % doc.qty_per_box"/>^FS
+^FO650,100^A0N,20,20^FDMaquina: <t t-esc="doc.workcenter_id.name"/>^FS
+
+^FO20,130^A0N,20,20^FDPedido JkkPack: <t t-esc="doc.production_id.sale_order_id.name or ''"/>^FS
+^FO300,130^A0N,20,20^FDPeso Neto: <t t-esc="'%.2f' % doc.weight"/> Kg^FS
+^FO550,130^A0N,25,25^FDCASE BOX ID #: <t t-esc="doc.box_sequence"/>^FS
+
+^FO20,170^A0N,24,24^FDLOTE/PALLET: <t t-esc="doc.name"/>^FS
+
+^FO20,220^BY2^BCN,60,Y,N,N^FD<t t-esc="doc.product_id.customer_item_code or doc.product_id.default_code"/>^FS
+^FO350,220^BY2^BCN,60,Y,N,N^FD<t t-esc="'%.2f' % doc.qty_per_box"/>^FS
+
+^FO150,340^BY3^BCN,80,Y,N,N^FD<t t-esc="doc.name"/>^FS
+^XZ
+        </t>
+    </template>
+</odoo>
