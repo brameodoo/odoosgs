@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mrp_workcenter_view_form_inherit_jkkpack" model="ir.ui.view">
+        <field name="name">mrp.workcenter.form.inherit.jkkpack</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="label_prefix" placeholder="Ej: EE"/>
+                <field name="is_final_packaging"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
