@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mrp_production_form_view_inherit_jkkpack" model="ir.ui.view">
+        <field name="name">mrp.production.form.inherit.jkkpack</field>
+        <field name="model">mrp.production</field>
+        <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_open_label_wizard" string="Generar Etiquetas / Empaque" type="object" class="oe_highlight" invisible="state in ('draft', 'cancel')"/>
+                <button name="action_open_reprint_wizard" string="Reimprimir Etiquetas" type="object" invisible="not label_ids"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Etiquetas Generadas" name="labels">
+                    <field name="label_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="label_type"/>
+                            <field name="workcenter_id"/>
+                            <field name="weight"/>
+                            <field name="operator_name"/>
+                            <field name="pallet_id"/>
+                            <field name="date_produced"/>
+                            <button name="action_reprint_label" string="Reimprimir" type="object" icon="fa-print"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Tarimas / Pallets" name="pallets">
+                    <field name="pallet_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="customer_po"/>
+                            <field name="total_boxes"/>
+                            <field name="net_weight"/>
+                            <field name="gross_weight"/>
+                            <field name="package_id"/>
+                            <button name="action_print_pallet_master_label" string="Etiqueta Master" type="object" icon="fa-tag"/>
+                            <button name="action_print_packing_list" string="Lista de Empaque" type="object" icon="fa-file-text-o"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
