@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_mrp_label_reprint_wizard_form" model="ir.ui.view">
+        <field name="name">mrp.label.reprint.wizard.form</field>
+        <field name="model">mrp.label.reprint.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reimpresión Selectiva de Etiquetas">
+                <sheet>
+                    <group>
+                        <field name="production_id" readonly="1"/>
+                        <field name="reprint_option" widget="radio"/>
+                    </group>
+                    <notebook invisible="reprint_option == 'all'">
+                        <page string="Seleccionar Etiquetas">
+                            <field name="label_ids" domain="[('production_id', '=', production_id)]">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="label_type"/>
+                                    <field name="weight"/>
+                                    <field name="date_produced"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button string="Imprimir Selección" name="action_reprint" type="object" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
