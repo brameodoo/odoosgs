@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_roll_label_zpl_template">
+        <t t-foreach="docs" t-as="doc">
+^XA
+^PW812
+^LL1218
+^FO20,30^A0N,30,30^FDJKKPack, S.A. DE C.V.^FS
+^FO500,30^A0N,20,20^FDRecibo de Produccion^FS
+^FO20,70^A0N,45,45^FD<t t-esc="doc.product_id.default_code or ''"/>^FS
+^FO20,120^BY3^BCN,60,Y,N,N^FD<t t-esc="doc.product_id.default_code or ''"/>^FS
+^FO20,210^A0N,35,35^FD<t t-esc="doc.product_id.name[:35] if doc.product_id.name else ''"/>^FS
+^FO20,255^A0N,22,22^FDOrden Fabricacion / Job Order: <t t-esc="doc.production_id.name"/>^FS
+^FO20,285^A0N,22,22^FDTIPO MATERIAL: <t t-esc="doc.product_id.material_type or 'N/A'"/>^FS
+^FO20,315^A0N,22,22^FDCALIBRE / THICKNESS: <t t-esc="'%.2f' % (doc.product_id.thickness or 0.0)"/>^FS
+^FO20,345^A0N,22,22^FDANCHO / WIDTH: <t t-esc="'%.2f' % (doc.product_id.width or 0.0)"/>^FS
+^FO20,385^A0N,28,28^FDCantidad / Quantity:^FS
+^FO20,420^A0N,60,60^FD<t t-esc="'%.2f' % doc.weight"/> KG^FS
+^FO320,410^BY2^BCN,50,Y,N,N^FD<t t-esc="'%.2f' % doc.weight"/>^FS
+
+^FO550,120^BY2^BCR,90,Y,N,N^FD<t t-esc="doc.name"/>^FS
+^FO500,100^A0R,25,25^FDLote/Batch: <t t-esc="doc.name"/>^FS
+
+^FO20,530^BQN,2,5^FDQA,<t t-esc="doc.product_id.default_code or ''"/>|<t t-esc="doc.name"/>|<t t-esc="'%.2f' % doc.weight"/>^FS
+^FO180,540^A0N,20,20^FDOF: <t t-esc="doc.production_id.name"/> | Art: <t t-esc="doc.product_id.default_code or ''"/>^FS
+^FO180,570^A0N,22,22^FDLote: <t t-esc="doc.name"/>^FS
+^FO180,600^A0N,20,20^FDFecha: <t t-esc="doc.date_produced.strftime('%d/%m/%Y %H:%M')"/>^FS
+^XZ
+        </t>
+    </template>
+</odoo>
