@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data numpy="1">
+        <!-- Secuencia global infinita de 8 dígitos para rollos -->
+        <record id="seq_mrp_production_roll_label" model="ir.sequence">
+            <field name="name">Secuencia Global Etiqueta de Rollo</field>
+            <field name="code">mrp.production.roll.label.sequence</field>
+            <field name="padding">8</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Secuencia global infinita para Tarimas / Pallets -->
+        <record id="seq_mrp_production_pallet" model="ir.sequence">
+            <field name="name">Secuencia Global de Tarimas JKKPack</field>
+            <field name="code">mrp.production.pallet.sequence</field>
+            <field name="prefix">TR</field>
+            <field name="padding">6</field>
+            <field name="number_next">19053</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>
