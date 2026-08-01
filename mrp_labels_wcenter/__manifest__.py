@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'JKKPack - Etiquetas de Producción, Empaque y Palletizado',
+    'name': 'MRP Production Custom Labels',
     'version': '19.0.1.0.0',
+    'summary': 'Generación y pesaje dinámico de etiquetas por rollo/caja en Órdenes de Fabricación',
+    'author': 'Desarrollador Odoo',
     'category': 'Manufacturing/Manufacturing',
-    'summary': 'Módulo especializado para generación de etiquetas ZPL por rollo, caja y tarima con Lista de Empaque QWeb',
-    'author': 'Gateway - JKKPack',
+    'sequence': 10,
     'depends': [
         'mrp',
-        'sale_management',
-        'stock',
         'barcodes',
+        'stock',            # <-- OBLIGATORIO para stock.quant.package
+        'sale_management',  # <-- OBLIGATORIO para vincular con Ordenes de Venta
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -26,6 +27,7 @@
         'report/report_packing_list_pdf.xml',
     ],
     'installable': True,
-    'application': True,
+    'application': False,
+    'auto_install': False,
     'license': 'LGPL-3',
 }
