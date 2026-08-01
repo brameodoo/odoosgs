@@ -8,8 +8,8 @@ class MrpProductionPallet(models.Model):
 
     name = fields.Char(string="N° Tarima / Pallet ID", required=True, copy=False, readonly=True, default=lambda self: _('Nuevo'))
     production_id = fields.Many2one('mrp.production', string="Orden de Fabricación", required=True, ondelete='cascade')
-    partner_id = fields.Many2one('res.partner', string="Cliente")
-    sale_order_name = fields.Char(string="Pedido de Venta", related='production_id.sale_order_name', store=False)
+    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", related='production_id.sale_order_id', store=True)
+    partner_id = fields.Many2one('res.partner', string="Cliente", related='production_id.sale_order_id.partner_id', store=True)
     customer_po = fields.Char(string="Pedido Cliente / Customer PO")
     
     label_box_ids = fields.One2many('mrp.production.label', 'pallet_id', string="Cajas en la Tarima")
