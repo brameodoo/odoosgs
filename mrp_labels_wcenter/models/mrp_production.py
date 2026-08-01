@@ -4,6 +4,7 @@ from odoo import models, fields, api, _
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
+    design_no = fields.Char(string="N° de Diseño")
     sale_order_name = fields.Char(string="Pedido de Venta", compute='_compute_sale_order_info', store=False)
     customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=False)
     
