@@ -9,8 +9,6 @@
     'depends': [
         'mrp',
         'barcodes',
-        'stock',            # <-- OBLIGATORIO para stock.quant.package
-        'sale_management',  # <-- OBLIGATORIO para vincular con Ordenes de Venta
     ],
     'data': [
         'security/ir.model.access.csv',
