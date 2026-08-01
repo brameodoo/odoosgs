@@ -32,7 +32,7 @@
                             <field name="total_boxes"/>
                             <field name="net_weight"/>
                             <field name="gross_weight"/>
-                            <field name="package_id"/>
+                            <field name="package_name"/>
                             <button name="action_print_pallet_master_label" string="Etiqueta Master" type="object" icon="fa-tag"/>
                             <button name="action_print_packing_list" string="Lista de Empaque" type="object" icon="fa-file-text-o"/>
                         </list>
