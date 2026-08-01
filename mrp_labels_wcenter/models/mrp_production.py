@@ -5,6 +5,7 @@ class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
     design_no = fields.Char(string="N° de Diseño")
+    sale_reference = fields.Char(string="Referencia de Venta / Pedido", compute='_compute_sale_order_info', store=False)
     sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", compute='_compute_sale_order_info', store=True)
     customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=True)
     
@@ -19,6 +20,7 @@ class MrpProduction(models.Model):
                 so = self.env['sale.order'].search([('name', '=', mo.origin)], limit=1)
             mo.sale_order_id = so.id if so else False
             mo.customer_po_no = so.client_order_ref if so else ''
+            mo.sale_reference = so.name if so else (mo.origin or '')
 
     def action_open_label_wizard(self):
         self.ensure_one()
