@@ -8,8 +8,8 @@ class MrpProductionPallet(models.Model):
 
     name = fields.Char(string="N° Tarima / Pallet ID", required=True, copy=False, readonly=True, default=lambda self: _('Nuevo'))
     production_id = fields.Many2one('mrp.production', string="Orden de Fabricación", required=True, ondelete='cascade')
-    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", related='production_id.sale_order_id', store=True)
-    partner_id = fields.Many2one('res.partner', string="Cliente", related='production_id.sale_order_id.partner_id', store=True)
+    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", related='production_id.sale_order_id', store=False)
+    partner_id = fields.Many2one('res.partner', string="Cliente", related='production_id.sale_order_id.partner_id', store=False)
     customer_po = fields.Char(string="Pedido Cliente / Customer PO")
     
     label_box_ids = fields.One2many('mrp.production.label', 'pallet_id', string="Cajas en la Tarima")
@@ -19,7 +19,6 @@ class MrpProductionPallet(models.Model):
     net_weight = fields.Float(string="Peso Neto (KG)", compute='_compute_totals', store=True, digits=(16, 2))
     gross_weight = fields.Float(string="Peso Bruto (KG)", compute='_compute_totals', store=True, digits=(16, 2))
     
-    # Campo seguro para el paquete nativo sin forzar comodel estricto si no existe en la BD
     package_name = fields.Char(string="Código de Paquete Nativo", readonly=True)
     date_created = fields.Datetime(string="Fecha de Creación", default=fields.Datetime.now)
 
@@ -39,12 +38,6 @@ class MrpProductionPallet(models.Model):
         records = super().create(vals_list)
         for record in records:
             record.package_name = record.name
-            # Si el modelo de paquetes de Odoo existe en la base de datos activa, lo creamos
-            if 'stock.quant.package' in self.env:
-                try:
-                    self.env['stock.quant.package'].create({'name': record.name})
-                except Exception:
-                    pass
         return records
 
     def action_print_pallet_master_label(self):
