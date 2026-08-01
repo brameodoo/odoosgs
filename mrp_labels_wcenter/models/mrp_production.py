@@ -4,8 +4,13 @@ from odoo import models, fields, api, _
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
+    # Campos requeridos por vistas XML previas de JKKPack
     design_no = fields.Char(string="N° de Diseño")
     sale_reference = fields.Char(string="Referencia de Venta / Pedido", compute='_compute_sale_order_info', store=False)
+    customer_code = fields.Char(string="Código de Cliente", compute='_compute_sale_order_info', store=False)
+    partner_id = fields.Many2one('res.partner', string="Cliente", compute='_compute_sale_order_info', store=False)
+    
+    # Campos propios del flujo de empaque
     sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", compute='_compute_sale_order_info', store=True)
     customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=True)
     
@@ -18,9 +23,12 @@ class MrpProduction(models.Model):
             so = False
             if mo.origin:
                 so = self.env['sale.order'].search([('name', '=', mo.origin)], limit=1)
+            
             mo.sale_order_id = so.id if so else False
             mo.customer_po_no = so.client_order_ref if so else ''
             mo.sale_reference = so.name if so else (mo.origin or '')
+            mo.partner_id = so.partner_id.id if (so and so.partner_id) else False
+            mo.customer_code = so.partner_id.ref if (so and so.partner_id) else ''
 
     def action_open_label_wizard(self):
         self.ensure_one()
