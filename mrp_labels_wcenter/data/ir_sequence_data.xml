@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data numpy="1">
+    <data noupdate="1">
         <!-- Secuencia global infinita de 8 dígitos para rollos -->
         <record id="seq_mrp_production_roll_label" model="ir.sequence">
             <field name="name">Secuencia Global Etiqueta de Rollo</field>
