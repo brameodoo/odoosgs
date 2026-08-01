@@ -9,6 +9,7 @@
     'depends': [
         'mrp',
         'barcodes',
+        'sale_management',  # <-- Módulo de Ventas confirmado
     ],
     'data': [
         'security/ir.model.access.csv',
