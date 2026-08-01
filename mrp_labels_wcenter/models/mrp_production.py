@@ -5,8 +5,8 @@ class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
     design_no = fields.Char(string="N° de Diseño")
-    sale_order_name = fields.Char(string="Pedido de Venta", compute='_compute_sale_order_info', store=False)
-    customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=False)
+    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", compute='_compute_sale_order_info', store=True)
+    customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=True)
     
     label_ids = fields.One2many('mrp.production.label', 'production_id', string="Etiquetas Emitidas")
     pallet_ids = fields.One2many('mrp.production.pallet', 'production_id', string="Tarimas / Pallets")
@@ -14,18 +14,11 @@ class MrpProduction(models.Model):
     @api.depends('origin')
     def _compute_sale_order_info(self):
         for mo in self:
-            so_name = ''
-            po_no = ''
-            if mo.origin and 'sale.order' in self.env:
+            so = False
+            if mo.origin:
                 so = self.env['sale.order'].search([('name', '=', mo.origin)], limit=1)
-                if so:
-                    so_name = so.name
-                    po_no = getattr(so, 'client_order_ref', '') or ''
-            else:
-                so_name = mo.origin or ''
-
-            mo.sale_order_name = so_name
-            mo.customer_po_no = po_no
+            mo.sale_order_id = so.id if so else False
+            mo.customer_po_no = so.client_order_ref if so else ''
 
     def action_open_label_wizard(self):
         self.ensure_one()
