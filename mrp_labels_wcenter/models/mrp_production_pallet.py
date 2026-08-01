@@ -19,7 +19,8 @@ class MrpProductionPallet(models.Model):
     net_weight = fields.Float(string="Peso Neto (KG)", compute='_compute_totals', store=True, digits=(16, 2))
     gross_weight = fields.Float(string="Peso Bruto (KG)", compute='_compute_totals', store=True, digits=(16, 2))
     
-    package_id = fields.Many2one('stock.quant.package', string="Paquete Odoo Nativo", readonly=True)
+    # Campo seguro para el paquete nativo sin forzar comodel estricto si no existe en la BD
+    package_name = fields.Char(string="Código de Paquete Nativo", readonly=True)
     date_created = fields.Datetime(string="Fecha de Creación", default=fields.Datetime.now)
 
     @api.depends('label_box_ids', 'label_box_ids.weight', 'label_box_ids.gross_weight', 'label_box_ids.qty_per_box')
@@ -37,15 +38,19 @@ class MrpProductionPallet(models.Model):
                 vals['name'] = self.env['ir.sequence'].next_by_code('mrp.production.pallet.sequence') or 'TR000000'
         records = super().create(vals_list)
         for record in records:
-            # Generar paquete nativo en el inventario de Odoo
-            package = self.env['stock.quant.package'].create({'name': record.name})
-            record.package_id = package.id
+            record.package_name = record.name
+            # Si el modelo de paquetes de Odoo existe en la base de datos activa, lo creamos
+            if 'stock.quant.package' in self.env:
+                try:
+                    self.env['stock.quant.package'].create({'name': record.name})
+                except Exception:
+                    pass
         return records
 
     def action_print_pallet_master_label(self):
         self.ensure_one()
-        return self.env.ref('mrp_jkkpack_packaging_labels.action_report_pallet_master_zpl').report_action(self)
+        return self.env.ref('mrp_labels_wcenter.action_report_pallet_master_zpl').report_action(self)
 
     def action_print_packing_list(self):
         self.ensure_one()
-        return self.env.ref('mrp_jkkpack_packaging_labels.action_report_packing_list_pdf').report_action(self)
+        return self.env.ref('mrp_labels_wcenter.action_report_packing_list_pdf').report_action(self)
