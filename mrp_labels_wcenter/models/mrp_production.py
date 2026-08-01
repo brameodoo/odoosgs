@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api, _
+from odoo import models, fields, api
 
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
-    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", compute='_compute_sale_order_id', store=True)
-    customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_id', store=True)
+    sale_order_id = fields.Many2one('sale.order', string="Pedido de Venta", compute='_compute_sale_order_info', store=False)
+    customer_po_no = fields.Char(string="Order Cliente PO", compute='_compute_sale_order_info', store=False)
     
     label_ids = fields.One2many('mrp.production.label', 'production_id', string="Etiquetas Emitidas")
     pallet_ids = fields.One2many('mrp.production.pallet', 'production_id', string="Tarimas / Pallets")
 
     @api.depends('origin')
-    def _compute_sale_order_id(self):
+    def _compute_sale_order_info(self):
         for mo in self:
             so = False
             if mo.origin:
                 so = self.env['sale.order'].search([('name', '=', mo.origin)], limit=1)
             mo.sale_order_id = so.id if so else False
-            mo.customer_po_no = so.client_order_ref if so else ''
+            mo.customer_po_no = so.client_order_ref if (so and hasattr(so, 'client_order_ref')) else ''
 
     def action_open_label_wizard(self):
         self.ensure_one()
@@ -29,7 +29,7 @@ class MrpProduction(models.Model):
         weight_limit = max(mo_total_qty - total_printed_rolls, 0.0)
 
         return {
-            'name': _('Generar Etiquetas y Empaque JKKPack'),
+            'name': 'Generar Etiquetas y Empaque JKKPack',
             'type': 'ir.actions.act_window',
             'res_model': 'mrp.production.label.wizard',
             'view_mode': 'form',
@@ -45,7 +45,7 @@ class MrpProduction(models.Model):
     def action_open_reprint_wizard(self):
         self.ensure_one()
         return {
-            'name': _('Reimpresión Selectiva de Etiquetas'),
+            'name': 'Reimpresión Selectiva de Etiquetas',
             'type': 'ir.actions.act_window',
             'res_model': 'mrp.label.reprint.wizard',
             'view_mode': 'form',
