@@ -23,10 +23,9 @@
             <!-- Pestañas en el Notebook -->
             <xpath expr="//notebook" position="inside">
                 <page string="Etiquetas Generadas" name="labels">
-                    <field name="label_ids" readonly="1">
-                        <tree string="Etiquetas">
+                    <field name="label_ids" readonly="1" mode="list">
+                        <list string="Etiquetas" create="false" edit="false" delete="false">
                             <field name="name"/>
-                            <!-- Si label_type da error en tu modelo, asegúrate de haberlo declarado en mrp.production.label -->
                             <field name="label_type"/>
                             <field name="workcenter_id"/>
                             <field name="weight"/>
@@ -34,13 +33,13 @@
                             <field name="pallet_id"/>
                             <field name="date_produced"/>
                             <button name="action_reprint_label" string="Reimprimir" type="object" icon="fa-print"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
                 
                 <page string="Tarimas / Pallets" name="pallets">
-                    <field name="pallet_ids" readonly="1">
-                        <tree string="Tarimas">
+                    <field name="pallet_ids" readonly="1" mode="list">
+                        <list string="Tarimas" create="false" edit="false" delete="false">
                             <field name="name"/>
                             <field name="customer_po"/>
                             <field name="total_boxes"/>
@@ -49,7 +48,7 @@
                             <field name="package_name"/>
                             <button name="action_print_pallet_master_label" string="Etiqueta Master" type="object" icon="fa-tag"/>
                             <button name="action_print_packing_list" string="Lista de Empaque" type="object" icon="fa-file-text-o"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>
