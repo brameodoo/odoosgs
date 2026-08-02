@@ -4,13 +4,18 @@ from odoo import models, fields, api, _
 class MrpProduction(models.Model):
     _inherit = 'mrp.production'
 
-    # --- CORRECCIÓN ERROR OWL (Vistas XML solicitaban este campo) ---
+    # --- FIX OWL ERRORS: Campos solicitados por vistas XML ---
     bom_reference = fields.Char(
         string="Referencia BoM", 
         related='bom_id.code', 
         store=True, 
         readonly=True
     )
+
+    production_type = fields.Selection([
+        ('standard', 'Estándar'),
+        ('custom', 'Especial / Personalizada'),
+    ], string="Tipo de Producción", default='standard')
 
     design_no = fields.Char(string="N° de Diseño")
     
@@ -28,7 +33,7 @@ class MrpProduction(models.Model):
         readonly=False
     )
     
-    # Campos dinámicos para interfaz de etiquetas / consultas rápidas
+    # Campos dinámicos para interfaz de etiquetas / consultas
     sale_reference = fields.Char(
         string="Referencia de Venta / Pedido", 
         compute='_compute_sale_order_dynamic'
@@ -48,7 +53,7 @@ class MrpProduction(models.Model):
         store=False
     )
     
-    # Relaciones para módulos de etiquetas y tarimas
+    # Relaciones One2many
     label_ids = fields.One2many(
         'mrp.production.label', 
         'production_id', 
@@ -95,7 +100,6 @@ class MrpProduction(models.Model):
             }
         }
 
-    # AQUÍ AGREGAS EL MÉTODO QUE FALTABA PARA TU XML:
     def action_open_reprint_wizard(self):
         """Abre el asistente para la reimpresión de etiquetas."""
         self.ensure_one()
