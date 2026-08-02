@@ -74,12 +74,11 @@ class MrpProduction(models.Model):
         for mo in self:
             so = mo.sale_order_id
             mo.sale_reference = so.name if so else (mo.origin or '')
-            # Asignación correcta de recordset (so.partner_id en vez de so.partner_id.id)
             mo.partner_id = so.partner_id if so else False
             mo.customer_code = so.partner_id.ref if so and so.partner_id else ''
             mo.customer_name = so.partner_id.name if so and so.partner_id else ''
 
-    # --- ACCIONES PARA BOTONES XML (Resuelve el ParseError) ---
+    # --- ACCIONES PARA BOTONES XML ---
 
     def action_open_label_wizard(self):
         """Abre el asistente para la generación / impresión de etiquetas."""
@@ -87,12 +86,28 @@ class MrpProduction(models.Model):
         return {
             'name': _('Generar Etiquetas'),
             'type': 'ir.actions.act_window',
-            'res_model': 'mrp.production.label.wizard',  # Ajusta al modelo exacto de tu wizard si difiere
+            'res_model': 'mrp.production.label.wizard',
             'view_mode': 'form',
             'target': 'new',
             'context': {
                 'default_production_id': self.id,
                 'default_product_id': self.product_id.id,
+            }
+        }
+
+    # AQUÍ AGREGAS EL MÉTODO QUE FALTABA PARA TU XML:
+    def action_open_reprint_wizard(self):
+        """Abre el asistente para la reimpresión de etiquetas."""
+        self.ensure_one()
+        return {
+            'name': _('Reimprimir Etiquetas'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'mrp.production.label.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_production_id': self.id,
+                'default_reprint_mode': True,
             }
         }
 
@@ -102,7 +117,7 @@ class MrpProduction(models.Model):
         return {
             'name': _('Generar Tarima / Pallet'),
             'type': 'ir.actions.act_window',
-            'res_model': 'mrp.production.pallet.wizard',  # Ajusta al modelo exacto de tu wizard si difiere
+            'res_model': 'mrp.production.pallet.wizard',
             'view_mode': 'form',
             'target': 'new',
             'context': {
