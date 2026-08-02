@@ -26,6 +26,7 @@
                     <field name="label_ids" readonly="1">
                         <tree string="Etiquetas">
                             <field name="name"/>
+                            <!-- Si label_type da error en tu modelo, asegúrate de haberlo declarado en mrp.production.label -->
                             <field name="label_type"/>
                             <field name="workcenter_id"/>
                             <field name="weight"/>
