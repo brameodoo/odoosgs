@@ -1,3 +1,4 @@
+
 import base64
 import io
 import unicodedata
@@ -11,111 +12,95 @@ from odoo.exceptions import UserError
 def normalize_name(name):
     if not name:
         return ""
-    # 1. Reemplaza caracteres invisibles que trae tu excel
     name = str(name).replace('\xa0', ' ').replace('\u200b', ' ').replace('\t', ' ')
-    # 2. Quita acentos
     name = ''.join(c for c in unicodedata.normalize('NFD', name) if unicodedata.category(c) != 'Mn')
-    # 3. Upper + solo letras y numeros
     name = name.upper()
-    name = re.sub(r'[^A-Z0-9\s]', ' ', name) # quita comas, puntos
+    name = re.sub(r'[^A-Z0-9\s]', ' ', name)
     name = re.sub(r'\s+', ' ', name).strip()
     return name
 
 def token_sort_ratio(a, b):
-    # Para manejar APELLIDO NOMBRE vs NOMBRE APELLIDO
     a_tokens = sorted(normalize_name(a).split())
     b_tokens = sorted(normalize_name(b).split())
     return SequenceMatcher(None, ' '.join(a_tokens), ' '.join(b_tokens)).ratio()
 
 class SgsPerdiemDepositImportWizard(models.TransientModel):
     _name = 'sgs.perdiem.deposit.import.wizard'
-    _description = 'Importador inteligente de depósitos'
+    _description = 'Importador inteligente de depositos'
 
     file = fields.Binary('Archivo Excel', required=True)
     filename = fields.Char('Nombre archivo')
     date_default = fields.Date('Fecha por defecto', default=fields.Date.context_today)
-    
-    line_ids = fields.One2many('sgs.perdiem.deposit.import.line', 'wizard_id', string='Líneas a conciliar')
+    line_ids = fields.One2many('sgs.perdiem.deposit.import.line', 'wizard_id', string='Lineas a conciliar')
     state = fields.Selection([('draft','Carga'),('to_conciliate','Conciliar'),('done','Hecho')], default='draft')
 
     def action_parse_file(self):
         self.ensure_one()
-        if not self.file:
-            raise UserError("Sube un archivo")
-        
         data = base64.b64decode(self.file)
-        wb = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
+        try:
+            wb = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
+        except Exception as e:
+            raise UserError(f"No se pudo leer el Excel: {e}")
         ws = wb['Sheet1'] if 'Sheet1' in wb.sheetnames else wb.active
         
-        # Lee encabezados
-        headers = [normalize_name(c.value) for c in next(ws.iter_rows(min_row=1, max_row=1))]
-        # Mapeo flexible
-        col_map = {}
-        for idx, h in enumerate(headers):
-            if 'FECHA' in h and 'DEPOSITO' in h: col_map['date'] = idx
-            if 'CUSTODIO' in h: col_map['custodio_raw'] = idx
-            if 'MONTO' in h: col_map['amount'] = idx
-            if 'CONCEPTO' in h: col_map['concept'] = idx
-
-        # Cache de custodios y empleados normalizados
         custodians = self.env['sgs.custodian'].search([])
         employees = self.env['hr.employee'].search([])
-        
         cust_map = {normalize_name(c.name): c for c in custodians}
         emp_map = {normalize_name(e.name): e for e in employees}
-        # Tambien mapa por token sort para busqueda rapida
-        all_cust_names = list(cust_map.keys())
 
         lines = []
         for row in ws.iter_rows(min_row=2, values_only=True):
-            if not any(row): continue
-            raw_name = str(row[col_map.get('custodio_raw',1)] or '').strip()
-            if not raw_name: continue
-            
-            norm = normalize_name(raw_name)
-            amount = row[col_map.get('amount',5)] or 0
-            date = row[col_map.get('date',0)] or self.date_default
-            concept = row[col_map.get('concept',4)] or 'Depósito semanal viáticos'
+            if not any(row):
+                continue
+            raw_name = str(row[1] or '').strip()
+            if not raw_name or 'CUSTODIO' in normalize_name(raw_name):
+                continue
+            amount = row[5] or 0
+            date_val = row[0] or self.date_default
+            concept = str(row[4] or 'Deposito semanal viaticos').strip()
 
+            norm = normalize_name(raw_name)
             custodian = cust_map.get(norm)
             employee = emp_map.get(norm)
             status = 'matched'
             score = 1.0
 
-            # 1. Intento exacto normalizado
             if not custodian and employee:
                 custodian = self.env['sgs.custodian'].search([('employee_id','=',employee.id)], limit=1)
             
-            # 2. Intento fuzzy token_sort si no hay exacto
             if not custodian:
                 best_match = None
                 best_score = 0
                 for c_name, c_rec in cust_map.items():
+                    if not set(norm.split()) & set(c_name.split()):
+                        continue
                     s = token_sort_ratio(norm, c_name)
                     if s > best_score:
                         best_score = s
                         best_match = c_rec
-                if best_score >= 0.85:
+                if best_score >= 0.88:
                     custodian = best_match
                     score = best_score
                     status = 'matched_auto'
-                elif best_score >= 0.65:
+                elif best_score >= 0.60:
                     custodian = best_match
                     score = best_score
                     status = 'to_conciliate'
                 else:
                     status = 'not_found'
+                    score = best_score
 
             lines.append((0,0,{
                 'custodio_raw': raw_name,
                 'custodio_normalized': norm,
                 'custodian_id': custodian.id if custodian else False,
-                'employee_id': employee.id if employee else (custodian.employee_id.id if custodian else False),
-                'date': date,
-                'amount': float(amount),
+                'employee_id': employee.id if employee else (custodian.employee_id.id if custodian and custodian.employee_id else False),
+                'date': date_val,
+                'amount': float(amount) if amount else 0.0,
                 'concept': concept,
                 'match_score': score,
                 'state': status,
+                'to_import': bool(custodian and float(amount or 0) > 0),
             }))
         
         self.line_ids = [(5,0,0)] + lines
@@ -129,49 +114,46 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
         }
 
     def action_create_deposits(self):
-        # Solo crea los que estan validados
-        to_create = self.line_ids.filtered(lambda l: l.state in ('matched','matched_auto') and l.custodian_id and l.to_import)
+        to_create = self.line_ids.filtered(lambda l: l.state in ('matched','matched_auto','to_conciliate') and l.custodian_id and l.to_import)
+        if not to_create:
+            raise UserError("No hay lineas validas. Asigna custodios manualmente o marca Importar.")
         vals_list = []
         for line in to_create:
-            if line.amount <= 0: continue
+            if line.amount <= 0:
+                continue
             vals_list.append({
                 'custodian_id': line.custodian_id.id,
                 'date': line.date,
                 'amount': line.amount,
                 'concept': line.concept,
             })
-        if not vals_list:
-            raise UserError("No hay líneas válidas para importar. Concilia manualmente las que están en amarillo/rojo.")
-        
-        self.env['sgs.perdiem.deposit'].create(vals_list)
+        deposits = self.env['sgs.perdiem.deposit'].create(vals_list)
         self.state = 'done'
         return {
-            'type':'ir.actions.client',
-            'tag':'display_notification',
-            'params':{'title': f'Se crearon {len(vals_list)} depósitos correctamente', 'type':'success'}
+            'type':'ir.actions.act_window',
+            'name':'Depositos creados',
+            'res_model':'sgs.perdiem.deposit',
+            'domain':[('id','in',deposits.ids)],
+            'view_mode':'list,form',
         }
 
 class SgsPerdiemDepositImportLine(models.TransientModel):
     _name = 'sgs.perdiem.deposit.import.line'
-    _description = 'Línea de conciliación de depósito'
+    _description = 'Linea de conciliacion de deposito'
 
     wizard_id = fields.Many2one('sgs.perdiem.deposit.import.wizard', required=True, ondelete='cascade')
     custodio_raw = fields.Char('Nombre en Excel', readonly=True)
     custodio_normalized = fields.Char('Normalizado', readonly=True)
-    
     employee_id = fields.Many2one('hr.employee', string='Empleado encontrado')
     custodian_id = fields.Many2one('sgs.custodian', string='Custodio a depositar')
-    
     date = fields.Date('Fecha')
     amount = fields.Float('Monto')
     concept = fields.Char('Concepto')
-    
     match_score = fields.Float('Score', digits=(3,2))
     state = fields.Selection([
         ('matched','Coincidencia exacta'),
-        ('matched_auto','Auto-conciliado (fuzzy)'),
-        ('to_conciliate','Requiere revisión'),
+        ('matched_auto','Auto-conciliado'),
+        ('to_conciliate','Requiere revision'),
         ('not_found','No encontrado')
     ], default='to_conciliate')
-    
-    to_import = fields.Boolean('Importar', default=True, help="Desmarca si es un empleado que no quieres abonar / no dado de alta")
+    to_import = fields.Boolean('Importar', default=True)
