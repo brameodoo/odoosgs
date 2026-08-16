@@ -21,6 +21,7 @@ Módulo para administrar custodios de vehículos pesados, depósitos de viático
         'views/menu.xml',
         'views/custody_views.xml',
         'views/portal_templates.xml',
+        'views/perdiem_import_wizard.xml',
         'wizard/batch_deposit_wizard_views.xml',
     ],
     'demo': [
