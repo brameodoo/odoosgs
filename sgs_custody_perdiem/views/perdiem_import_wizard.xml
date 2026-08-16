@@ -44,5 +44,5 @@
         <field name="target">new</field>
     </record>
     
-    <menuitem id="menu_sgs_perdiem_import" name="Importar Depósitos (Excel)" parent="sgs_custody_perdiem.menu_finanzas" action="action_sgs_perdiem_import_wizard" sequence="10"/>
+    <menuitem id="menu_sgs_perdiem_import" name="Importar Depósitos (Excel)" parent="sgs_custody_perdiem.menu_sgs_deposits" action="action_sgs_perdiem_import_wizard" sequence="10"/>
 </odoo>
