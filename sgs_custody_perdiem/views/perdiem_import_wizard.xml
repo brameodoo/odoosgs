@@ -1,35 +1,45 @@
 <odoo>
     <record id="view_sgs_perdiem_import_wizard_form" model="ir.ui.view">
-        <field name="name">Importar depósitos viáticos</field>
+        <field name="name">Importar depositos viaticos</field>
         <field name="model">sgs.perdiem.deposit.import.wizard</field>
         <field name="arch" type="xml">
             <form>
                 <header>
                     <button name="action_parse_file" string="1. Analizar Excel" type="object" class="oe_highlight" invisible="state != 'draft'"/>
-                    <button name="action_create_deposits" string="2. Crear Depósitos" type="object" class="oe_highlight" invisible="state != 'to_conciliate'"/>
+                    <button name="action_create_deposits" string="2. Crear Depositos" type="object" class="oe_highlight" invisible="state != 'to_conciliate'" confirm="Se crearan solo las lineas marcadas como Importar. Continuar?"/>
                 </header>
                 <sheet>
                     <group invisible="state != 'draft'">
-                        <field name="file" widget="binary" filename="filename" string="Arrastra aquí tu Deposito_viaticos_sgs.xlsx"/>
+                        <field name="file" widget="binary" filename="filename" string="Arrastra aqui tu Deposito_viaticos_sgs.xlsx"/>
                         <field name="filename" invisible="1"/>
-                        <field name="date_default"/>
+                        <field name="date_default" string="Fecha por defecto si viene vacia"/>
                     </group>
+                    <div invisible="state == 'draft'" class="alert alert-info" role="alert">
+                        <div class="d-flex gap-4">
+                            <span><i class="fa fa-check-circle text-success"/> Matched: <field name="total_matched" nolabel="1" readonly="1" class="oe_inline"/></span>
+                            <span><i class="fa fa-exclamation-triangle text-warning"/> Por conciliar: <field name="total_errors" nolabel="1" readonly="1" class="oe_inline"/></span>
+                            <span><i class="fa fa-upload"/> A importar: <field name="total_to_import" nolabel="1" readonly="1" class="oe_inline"/></span>
+                        </div>
+                    </div>
                     <field name="state" invisible="1"/>
                     <notebook invisible="state == 'draft'">
-                        <page string="Conciliación" name="lines">
+                        <page string="Conciliacion" name="lines">
                             <field name="line_ids">
                                 <list editable="bottom" decoration-success="state in ('matched','matched_auto')" decoration-warning="state == 'to_conciliate'" decoration-danger="state == 'not_found'">
-                                    <field name="custodio_raw" readonly="1"/>
-                                    <field name="employee_id" readonly="1"/>
-                                    <field name="custodian_id" options="{'no_create': True}"/>
-                                    <field name="amount"/>
-                                    <field name="date"/>
-                                    <field name="state" widget="badge" decoration-success="state in ('matched','matched_auto')" decoration-warning="state == 'to_conciliate'" decoration-danger="state == 'not_found'"/>
-                                    <field name="match_score" widget="progressbar"/>
-                                    <field name="to_import" widget="boolean_toggle"/>
+                                    <field name="custodio_raw" readonly="1" width="250"/>
+                                    <field name="custodio_normalized" readonly="1" optional="hide"/>
+                                    <field name="custodian_id" options="{'no_create': True}" width="250"/>
+                                    <field name="employee_id" readonly="1" optional="show"/>
+                                    <field name="amount" width="100"/>
+                                    <field name="date" width="120"/>
+                                    <field name="state" widget="badge" decoration-success="state in ('matched','matched_auto')" decoration-warning="state == 'to_conciliate'" decoration-danger="state == 'not_found'" width="150"/>
+                                    <field name="match_score" widget="progressbar" width="80"/>
+                                    <field name="to_import" widget="boolean_toggle" width="80"/>
                                 </list>
                             </field>
-                            <p class="text-muted">Amarillo = revisa manualmente. Rojo = empleado no existe en hr.employee / sgs.custodian. Puedes asignar el custodio correcto o desmarcar "Importar" para descartarlo.</p>
+                            <div class="text-muted mt-2">
+                                <b>Flujo:</b> Verde = match automatico contra hr.employee/sgs.custodian. Amarillo = el sistema encontro un candidato (ej. apellido invertido) pero debes confirmar el custodio. Rojo = no existe en hr.employee, descarta con el toggle o crea primero el empleado.
+                            </div>
                         </page>
                     </notebook>
                 </sheet>
@@ -38,11 +48,12 @@
     </record>
 
     <record id="action_sgs_perdiem_import_wizard" model="ir.actions.act_window">
-        <field name="name">Importar Depósitos Viáticos</field>
+        <field name="name">Importar Depositos Viaticos</field>
         <field name="res_model">sgs.perdiem.deposit.import.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
-    
-    <menuitem id="menu_sgs_perdiem_import" name="Importar Depósitos (Excel)" parent="sgs_custody_perdiem.menu_sgs_deposits" action="action_sgs_perdiem_import_wizard" sequence="10"/>
+
+    <!-- CORREGIDO: parent correcto segun tu menu.xml es menu_sgs_finance -->
+    <menuitem id="menu_sgs_perdiem_import" name="Importar Depositos (Excel)" parent="menu_sgs_finance" action="action_sgs_perdiem_import_wizard" sequence="5"/>
 </odoo>
