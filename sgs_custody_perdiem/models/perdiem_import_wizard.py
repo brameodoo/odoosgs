@@ -33,7 +33,6 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
     line_ids = fields.One2many('sgs.perdiem.deposit.import.line', 'wizard_id', string='Lineas a conciliar')
     state = fields.Selection([('draft','Carga'),('to_conciliate','Conciliar'),('done','Hecho')], default='draft')
 
-
     def action_parse_file(self):
         self.ensure_one()
         data = base64.b64decode(self.file)
@@ -41,32 +40,40 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
         ws = wb.active
         col_map = {}
         header_row_idx = 0
-        # 1. Intenta encontrar header con CUSTODIO en primeras 10 filas
-        for r in range(1, 11):
+        is_bank_format = False
+
+        # Detecta formato por header
+        for r in range(1, 20):
             row_vals = [str(c.value or '') for c in ws[r]]
+            norm_row = [normalize_name(v) for v in row_vals]
             if not any(row_vals):
                 continue
-            norm_row = [normalize_name(v) for v in row_vals]
+            # Formato viaticos clasico
             if any('CUSTODIO' in n for n in norm_row):
                 header_row_idx = r
                 for idx, h in enumerate(norm_row):
-                    if 'FECHA' in h and 'DEPOSITO' in h:
-                        col_map['date'] = idx
-                    elif 'CUSTODIO' in h:
-                        col_map['custodio'] = idx
-                    elif h == 'MONTO' or 'MONTO' in h or 'IMPORTE' in h:
-                        col_map['amount'] = idx
-                    elif 'CONCEPTO' in h:
-                        col_map['concept'] = idx
+                    if 'FECHA' in h and 'DEPOSITO' in h: col_map['date']=idx
+                    elif 'CUSTODIO' in h: col_map['custodio']=idx
+                    elif 'MONTO' in h or 'IMPORTE' in h: col_map['amount']=idx
+                    elif 'CONCEPTO' in h: col_map['concept']=idx
                 break
-        
-        # 2. Si no hay header, es formato banco: [REF, NOMBRE, MONTO]
-        is_bank_format = False
-        if 'custodio' not in col_map:
+            # Formato PLANTILLA_SISTEMAS_GLOBALES (tu archivo actual)
+            if 'IUT' in norm_row and 'MONTO TRASPASO' in ' '.join(norm_row) and 'EMPLEADO' in ' '.join(norm_row):
+                header_row_idx = r
+                # En tu plantilla: IUT=0, MONTO=1, EMPLEADO=2, N EMPLEADO=3
+                for idx, h in enumerate(norm_row):
+                    if h == 'IUT': col_map['iut']=idx
+                    elif 'MONTO' in h: col_map['amount']=idx
+                    elif h == 'EMPLEADO': col_map['custodio']=idx
+                    elif 'N DE EMPLEADO' in h or 'NUM' in h: col_map['num_emp']=idx
+                is_bank_format = True
+                break
+
+        if not col_map.get('custodio') and not col_map.get('amount'):
+            # fallback: si no encontro header pero tiene datos tipo banco
+            col_map = {'iut':0, 'amount':1, 'custodio':2, 'num_emp':3}
+            header_row_idx = 6  # tu plantilla tiene header en fila 6
             is_bank_format = True
-            # Heuristica banco: segunda columna con letras es nombre, tercera con numero es monto
-            col_map = {'custodio': 1, 'amount': 2, 'concept': 0, 'date': None}
-            header_row_idx = 0  # sin header, empieza desde fila 1
 
         custodians = self.env['sgs.custodian'].search([])
         employees = self.env['hr.employee'].search([])
@@ -74,79 +81,60 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
         emp_map = {normalize_name(e.name): e for e in employees}
 
         lines = []
+        skipped_zero = 0
         for row in ws.iter_rows(min_row=header_row_idx+1, values_only=True):
             if not row or not any(row):
                 continue
-            row = list(row) + [None]*20
-            raw_cust = str(row[col_map.get('custodio',1)] or '').strip()
-            if not raw_cust:
+            row = list(row) + [None]*10
+            raw_cust = str(row[col_map.get('custodio',2)] or '').strip()
+            if not raw_cust: continue
+            if normalize_name(raw_cust) in ('EMPLEADO','CUSTODIO') or len(raw_cust) < 4:
                 continue
-            # Filtra basura pero permite nombres reales
-            norm_check = normalize_name(raw_cust)
-            if not is_bank_format:
-                if raw_cust.replace('.','',1).isdigit() or 'MONTO' in norm_check or len(raw_cust) < 5:
-                    continue
-            else:
-                # En formato banco, el nombre debe tener al menos 2 palabras y no ser solo numeros
-                if len(raw_cust) < 5 or raw_cust.replace('.','',1).replace(',','',1).isdigit():
-                    continue
+            if raw_cust.replace('.','',1).isdigit():
+                continue
 
-            raw_amount = row[col_map.get('amount',2)] if 'amount' in col_map else None
+            raw_amount = row[col_map.get('amount',1)]
             try:
-                # Limpia $ , y espacios
-                clean_amt = str(raw_amount).replace(',','').replace('$','').replace(' ','')
-                amount = float(clean_amt or 0)
+                amount = float(str(raw_amount).replace(',','').replace('$','').replace(' ','') or 0)
             except:
                 amount = 0
 
             if amount == 0:
-                continue
+                skipped_zero += 1
+                continue  # tu plantilla trae muchos en 0, los ignoramos como pediste
 
-            raw_date = row[col_map.get('date',0)] if 'date' in col_map and col_map.get('date') is not None else None
+            raw_date = row[col_map.get('date',0)] if col_map.get('date') is not None else None
             date_val = self.date_default
-            if raw_date:
-                if hasattr(raw_date, 'year'):
-                    date_val = raw_date.date() if hasattr(raw_date, 'date') else raw_date
-                else:
-                    try:
-                        from dateutil import parser as date_parser
-                        date_val = date_parser.parse(str(raw_date), dayfirst=True).date()
-                    except:
-                        date_val = self.date_default
+            if raw_date and hasattr(raw_date, 'year'):
+                date_val = raw_date.date() if hasattr(raw_date, 'date') else raw_date
 
-            raw_concept = row[col_map.get('concept',0)] if 'concept' in col_map else ''
-            concept = str(raw_concept or 'Deposito semanal viaticos').strip()[:200]
+            iut = str(row[col_map.get('iut',0)] or '').strip() if 'iut' in col_map else ''
+            num_emp = str(row[col_map.get('num_emp',3)] or '').strip() if 'num_emp' in col_map else ''
+            concept = f"{iut} - Emp {num_emp}".strip() if is_bank_format else str(row[col_map.get('concept',4)] or 'Deposito viaticos').strip()
 
             norm = normalize_name(raw_cust)
             custodian = cust_map.get(norm)
             employee = emp_map.get(norm)
-            status = 'matched'
-            score = 1.0
-
             if not custodian and employee:
                 custodian = self.env['sgs.custodian'].search([('employee_id','=',employee.id)], limit=1)
             
+            status = 'matched'
+            score = 1.0
             if not custodian:
                 best_match = None
                 best_score = 0
                 for c_name, c_rec in cust_map.items():
-                    if not set(norm.split()) & set(c_name.split()):
-                        continue
+                    if not set(norm.split()) & set(c_name.split()): continue
                     s = token_sort_ratio(norm, c_name)
                     if s > best_score:
                         best_score = s
                         best_match = c_rec
-                if best_score >= 0.85:
-                    custodian = best_match
-                    score = best_score
-                    status = 'matched_auto'
-                elif best_score >= 0.50:
-                    custodian = best_match
-                    score = best_score
-                    status = 'to_conciliate'
+                if best_score >= 0.80:
+                    custodian = best_match; score=best_score; status='matched_auto'
+                elif best_score >= 0.45:
+                    custodian = best_match; score=best_score; status='to_conciliate'
                 else:
-                    status = 'not_found'
-                    score = best_score
+                    status='not_found'; score=best_score
 
             lines.append((0,0,{
                 'custodio_raw': raw_cust,
@@ -155,14 +143,14 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                 'employee_id': employee.id if employee else (custodian.employee_id.id if custodian and custodian.employee_id else False),
                 'date': date_val,
                 'amount': amount,
-                'concept': concept,
+                'concept': concept[:200],
                 'match_score': score,
                 'state': status,
                 'to_import': bool(custodian and amount > 0),
             }))
-        
+
         if not lines:
-            raise UserError(f"No se detectaron lineas validas. Formato detectado: {'BANCO (REF,NOMBRE,MONTO)' if is_bank_format else f'VIATICOS header fila {header_row_idx} col_map={col_map}'}")
+            raise UserError(f"No se detectaron lineas validas con monto >0. Se omitieron {skipped_zero} lineas con monto 0. Mapa: {col_map} header fila {header_row_idx}. Tu plantilla debe tener MONTO TRASPASO >0 en la columna B.")
 
         self.line_ids = [(5,0,0)] + lines
         self.state = 'to_conciliate'
@@ -174,20 +162,16 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
             'target':'new',
         }
 
-
     def action_create_deposits(self):
         to_create = self.line_ids.filtered(lambda l: l.custodian_id and l.to_import and l.amount > 0)
         if not to_create:
-            raise UserError("No hay lineas validas para importar. Asigna el custodio manualmente en las lineas rojas.")
-        vals_list = []
-        for line in to_create:
-            vals_list.append({
-                'custodian_id': line.custodian_id.id,
-                'date': line.date,
-                'amount': line.amount,
-                'concept': line.concept,
-            })
-        deposits = self.env['sgs.perdiem.deposit'].create(vals_list)
+            raise UserError("No hay lineas validas para importar.")
+        deposits = self.env['sgs.perdiem.deposit'].create([{
+            'custodian_id': l.custodian_id.id,
+            'date': l.date,
+            'amount': l.amount,
+            'concept': l.concept,
+        } for l in to_create])
         self.state = 'done'
         return {
             'type':'ir.actions.act_window',
