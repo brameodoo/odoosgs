@@ -50,12 +50,17 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
 
         lines = []
         for row in ws.iter_rows(min_row=2, values_only=True):
-            if not any(row):
+            if not row or not any(row):
                 continue
+            # Hacemos la fila segura por si tiene menos columnas
+            row = list(row) + [None]*10
             raw_name = str(row[1] or '').strip()
             if not raw_name or 'CUSTODIO' in normalize_name(raw_name):
                 continue
-            amount = row[5] or 0
+            try:
+                amount = float(row[5] or 0)
+            except:
+                amount = 0
             date_val = row[0] or self.date_default
             concept = str(row[4] or 'Deposito semanal viaticos').strip()
 
