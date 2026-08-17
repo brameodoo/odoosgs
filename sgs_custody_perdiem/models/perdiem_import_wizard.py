@@ -33,18 +33,20 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
     line_ids = fields.One2many('sgs.perdiem.deposit.import.line', 'wizard_id', string='Lineas a conciliar')
     state = fields.Selection([('draft','Carga'),('to_conciliate','Conciliar'),('done','Hecho')], default='draft')
 
+
     def action_parse_file(self):
         self.ensure_one()
         data = base64.b64decode(self.file)
         wb = openpyxl.load_workbook(io.BytesIO(data), data_only=True)
         ws = wb.active
-        # Buscar header real (primera fila con CUSTODIO)
-        header_row_idx = 1
         col_map = {}
-        for r in range(1, 10):
+        header_row_idx = 0
+        # 1. Intenta encontrar header con CUSTODIO en primeras 10 filas
+        for r in range(1, 11):
             row_vals = [str(c.value or '') for c in ws[r]]
+            if not any(row_vals):
+                continue
             norm_row = [normalize_name(v) for v in row_vals]
-            # Detecta encabezado
             if any('CUSTODIO' in n for n in norm_row):
                 header_row_idx = r
                 for idx, h in enumerate(norm_row):
@@ -52,14 +54,19 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                         col_map['date'] = idx
                     elif 'CUSTODIO' in h:
                         col_map['custodio'] = idx
-                    elif h == 'MONTO' or 'MONTO' in h:
+                    elif h == 'MONTO' or 'MONTO' in h or 'IMPORTE' in h:
                         col_map['amount'] = idx
                     elif 'CONCEPTO' in h:
                         col_map['concept'] = idx
                 break
         
+        # 2. Si no hay header, es formato banco: [REF, NOMBRE, MONTO]
+        is_bank_format = False
         if 'custodio' not in col_map:
-            raise UserError(f"No encontre columna CUSTODIO. Encabezados detectados fila {header_row_idx}: {row_vals}")
+            is_bank_format = True
+            # Heuristica banco: segunda columna con letras es nombre, tercera con numero es monto
+            col_map = {'custodio': 1, 'amount': 2, 'concept': 0, 'date': None}
+            header_row_idx = 0  # sin header, empieza desde fila 1
 
         custodians = self.env['sgs.custodian'].search([])
         employees = self.env['hr.employee'].search([])
@@ -74,17 +81,28 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
             raw_cust = str(row[col_map.get('custodio',1)] or '').strip()
             if not raw_cust:
                 continue
-            # Filtro: si el nombre es numerico o dice MONTO TRASPASO, es basura del excel
-            if raw_cust.replace('.','',1).isdigit() or 'MONTO' in normalize_name(raw_cust) or len(raw_cust) < 5:
-                continue
+            # Filtra basura pero permite nombres reales
+            norm_check = normalize_name(raw_cust)
+            if not is_bank_format:
+                if raw_cust.replace('.','',1).isdigit() or 'MONTO' in norm_check or len(raw_cust) < 5:
+                    continue
+            else:
+                # En formato banco, el nombre debe tener al menos 2 palabras y no ser solo numeros
+                if len(raw_cust) < 5 or raw_cust.replace('.','',1).replace(',','',1).isdigit():
+                    continue
 
-            raw_amount = row[col_map.get('amount',5)] if 'amount' in col_map else row[5]
+            raw_amount = row[col_map.get('amount',2)] if 'amount' in col_map else None
             try:
-                amount = float(str(raw_amount).replace(',','').replace('$','') or 0)
+                # Limpia $ , y espacios
+                clean_amt = str(raw_amount).replace(',','').replace('$','').replace(' ','')
+                amount = float(clean_amt or 0)
             except:
                 amount = 0
 
-            raw_date = row[col_map.get('date',0)] if 'date' in col_map else row[0]
+            if amount == 0:
+                continue
+
+            raw_date = row[col_map.get('date',0)] if 'date' in col_map and col_map.get('date') is not None else None
             date_val = self.date_default
             if raw_date:
                 if hasattr(raw_date, 'year'):
@@ -96,7 +114,8 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                     except:
                         date_val = self.date_default
 
-            concept = str(row[col_map.get('concept',4)] if 'concept' in col_map else (row[4] or 'Deposito semanal viaticos')).strip()
+            raw_concept = row[col_map.get('concept',0)] if 'concept' in col_map else ''
+            concept = str(raw_concept or 'Deposito semanal viaticos').strip()[:200]
 
             norm = normalize_name(raw_cust)
             custodian = cust_map.get(norm)
@@ -111,7 +130,6 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                 best_match = None
                 best_score = 0
                 for c_name, c_rec in cust_map.items():
-                    # debe compartir al menos 1 token para no comparar todo
                     if not set(norm.split()) & set(c_name.split()):
                         continue
                     s = token_sort_ratio(norm, c_name)
@@ -122,7 +140,7 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                     custodian = best_match
                     score = best_score
                     status = 'matched_auto'
-                elif best_score >= 0.55:
+                elif best_score >= 0.50:
                     custodian = best_match
                     score = best_score
                     status = 'to_conciliate'
@@ -144,7 +162,7 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
             }))
         
         if not lines:
-            raise UserError(f"No se detectaron lineas validas. Mapa columnas: {col_map}. Revisa que la columna CUSTODIO tenga nombres.")
+            raise UserError(f"No se detectaron lineas validas. Formato detectado: {'BANCO (REF,NOMBRE,MONTO)' if is_bank_format else f'VIATICOS header fila {header_row_idx} col_map={col_map}'}")
 
         self.line_ids = [(5,0,0)] + lines
         self.state = 'to_conciliate'
@@ -155,6 +173,7 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
             'view_mode':'form',
             'target':'new',
         }
+
 
     def action_create_deposits(self):
         to_create = self.line_ids.filtered(lambda l: l.custodian_id and l.to_import and l.amount > 0)
