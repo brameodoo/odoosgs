@@ -61,7 +61,18 @@ class SgsPerdiemDepositImportWizard(models.TransientModel):
                 amount = float(row[5] or 0)
             except:
                 amount = 0
-            date_val = row[0] or self.date_default
+            # Fecha robusta: puede venir como datetime, string o basura tipo 'IUT'
+            raw_date = row[0]
+            date_val = self.date_default
+            if raw_date:
+                if hasattr(raw_date, 'year'): # datetime object
+                    date_val = raw_date.date() if hasattr(raw_date, 'date') else raw_date
+                else:
+                    try:
+                        from dateutil import parser as date_parser
+                        date_val = date_parser.parse(str(raw_date), dayfirst=True).date()
+                    except:
+                        date_val = self.date_default
             concept = str(row[4] or 'Deposito semanal viaticos').strip()
 
             norm = normalize_name(raw_name)
